@@ -1145,7 +1145,7 @@ server.headersTimeout = 20000;
 server.requestTimeout = 0;          // SSE: a resposta é longa por natureza
 server.keepAliveTimeout = 65000;
 
-const HOST = process.env.HOST || '127.0.0.1';   // atrás de proxy; use 0.0.0.0 só se souber por quê
+const HOST = process.env.HOST || '0.0.0.0';
 server.listen(CFG.port, HOST, () => {
   console.log(`UROBOROS v4 ${HOST}:${CFG.port} — ${CFG.clusters} clusters | ${CFG.claudeModel} × ${CFG.geminiModel}`);
   console.log(`  perfis: ${Object.keys(PROFILES).join(', ')} | fontes: ${Object.keys(SOURCES).join(', ')}`);
