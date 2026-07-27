@@ -1,0 +1,46 @@
+# Blueprint do Render. Em render.com: New → Blueprint → escolha este repositório.
+# O Render lê este arquivo e só pede as duas chaves de API.
+
+services:
+  - type: web
+    name: uroboros
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      # o Render entrega a porta; o processo precisa escutar em todas as interfaces
+      - key: HOST
+        value: 0.0.0.0
+
+      # preenchidas por você no painel, nunca no repositório
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # gerado pelo Render; leia no painel em Environment
+      - key: ACCESS_TOKEN
+        generateValue: true
+
+      # teto por execução: o tier gratuito é público, então comece apertado
+      - key: MAX_COST_USD
+        value: "0.25"
+
+      # execuções por minuto e por IP
+      - key: RATE_MAX
+        value: "4"
+
+      - key: CLUSTERS
+        value: "10"
+      - key: CONCURRENCY
+        value: "4"
+      - key: CLAUDE_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash

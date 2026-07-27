@@ -1,0 +1,17 @@
+{
+  "name": "uroboros",
+  "version": "4.0.0",
+  "description": "Supercomputador de N clusters Claude x Gemini sobre barramento hexadecimal URB1",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-mock.js",
+    "vitrine": "MOCK_SERVE=1 node test-mock.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {},
+  "license": "UNLICENSED"
+}
