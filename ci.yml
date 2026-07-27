@@ -1,0 +1,42 @@
+name: verificação
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: sintaxe do backend
+        run: node --check server.js
+
+      - name: sintaxe do frontend
+        run: |
+          node -e "
+          const s = require('fs').readFileSync('public/index.html','utf8');
+          const m = s.match(/<script>\n([\s\S]*?)\n<\/script>/);
+          if (!m) { console.error('bloco de script não encontrado'); process.exit(1); }
+          new Function(m[1]);
+          console.log('frontend ok:', (s.length/1024).toFixed(1) + 'KB');
+          "
+
+      - name: pipeline completo com APIs simuladas
+        run: node test-mock.js
+
+      - name: nenhuma chave vazou para o repositório
+        run: |
+          if grep -rEn 'sk-ant-[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_-]{30,}' \
+             --include='*.js' --include='*.html' --include='*.md' --include='*.yml' . ; then
+            echo "::error::padrão de chave de API encontrado no repositório"
+            exit 1
+          fi
+          echo "nenhuma chave encontrada"

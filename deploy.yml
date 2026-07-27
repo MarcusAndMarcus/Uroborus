@@ -1,0 +1,55 @@
+name: entrega
+
+# Só roda depois que a verificação passar. Zero dependência npm: não há build.
+on:
+  workflow_run:
+    workflows: [verificação]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: entrega-producao
+  cancel-in-progress: false
+
+jobs:
+  entregar:
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: producao          # exija aprovação manual aqui se quiser
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: chave ssh
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: enviar código
+        run: |
+          rsync -az --delete \
+            --exclude '.git/' --exclude '.github/' \
+            --exclude 'jobs/' --exclude 'corpus/' --exclude '.env' \
+            -e "ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.SSH_PORT || 22 }}" \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/uroboros/"
+
+      - name: reiniciar e conferir saúde
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "${{ secrets.SSH_PORT || 22 }}" \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s <<'REMOTO'
+          set -euo pipefail
+          sudo chown -R uroboros:uroboros /opt/uroboros
+          sudo systemctl restart uroboros
+          for i in $(seq 1 15); do
+            if curl -fsS localhost:8080/api/health > /tmp/saude.json; then
+              echo "no ar:"; head -c 200 /tmp/saude.json; echo
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "não respondeu em 30s — últimos registros:"
+          journalctl -u uroboros -n 40 --no-pager
+          exit 1
+          REMOTO

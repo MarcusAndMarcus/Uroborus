@@ -1,0 +1,20 @@
+# NUNCA versionar: chaves de API e token de acesso
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# dossiês das execuções — contêm suas consultas e as respostas dos modelos
+jobs/
+*.json.bak
+
+# corpus real — pode conter especificação, contrato, log, documento de cliente
+corpus/*
+!corpus/exemplo-notas.md
+
+# ruído
+node_modules/
+npm-debug.log*
+.DS_Store
+deploy/dados/

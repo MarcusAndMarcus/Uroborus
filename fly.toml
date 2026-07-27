@@ -1,0 +1,46 @@
+# Fly.io — caminho sem VPS, construindo direto do repositório GitHub.
+# Suporta processo longo, SSE e disco persistente (que jobs/ e corpus/ exigem).
+#   flyctl launch --no-deploy --copy-config --config deploy/fly.toml
+#   flyctl volumes create dados --size 1 --region gru
+#   flyctl secrets set ANTHROPIC_API_KEY=... GEMINI_API_KEY=... ACCESS_TOKEN=...
+#   flyctl deploy
+
+app = "uroboros"
+primary_region = "gru"          # São Paulo
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  HOST = "0.0.0.0"
+  PORT = "8080"
+  JOBS_DIR = "/dados/jobs"
+  CORPUS_DIR = "/dados/corpus"
+  MAX_COST_USD = "0.50"
+
+[[mounts]]
+  source = "dados"
+  destination = "/dados"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false     # SSE morre se a máquina dorme no meio de uma execução
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 8
+    hard_limit = 16
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  path = "/api/health"
+  timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
